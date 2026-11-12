@@ -101,6 +101,16 @@ public class TicketingAgent {
             String message,
             String sessionId
     ) {
+        return chatWithCards(currentUserId, conversationId, message, sessionId).reply();
+    }
+
+    /** 页面聊天入口：同一次请求返回文字与真实订单卡片。 */
+    public ChatReply chatWithCards(
+            long currentUserId,
+            String conversationId,
+            String message,
+            String sessionId
+    ) {
         if (currentUserId <= 0) {
             throw new IllegalArgumentException("用户身份无效");
         }
@@ -129,11 +139,14 @@ public class TicketingAgent {
         Map<String, Object> context = new HashMap<>();
         context.put(CURRENT_USER_ID, currentUserId);
 
+        var orderCards = new ChatReply.OrderCards();
+        context.put(ChatReply.OrderCards.CONTEXT_KEY, orderCards);
+
         if (sessionId != null && !sessionId.isBlank()) {
             context.put(SESSION_ID, sessionId);
         }
 
-        return chatClient.prompt()
+        String reply = chatClient.prompt()
                 .system(requestSystemPrompt)
                 .user(message)
                 .advisors(advisor -> advisor.param(
@@ -143,5 +156,7 @@ public class TicketingAgent {
                 .toolContext(context)
                 .call()
                 .content();
+
+        return new ChatReply(reply, orderCards.snapshot());
     }
 }

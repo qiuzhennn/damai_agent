@@ -1,10 +1,12 @@
 package com.qiuzhen.damaiagent.ticketing;
 
+import com.qiuzhen.damaiagent.agent.ChatReply;
 import com.qiuzhen.damaiagent.agent.TicketingAgent;
 import org.springframework.ai.chat.model.ToolContext;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -72,7 +74,7 @@ public class OrderTools {
         String sessionId = authenticatedSession(toolContext);
 
         // 默认页码和数量由程序处理，参数合法性由 OrderQuery 统一校验。
-        return ticketingGateway.searchMyOrders(
+        var result = ticketingGateway.searchMyOrders(
                 userId,
                 new OrderQuery(
                         keyword,
@@ -83,6 +85,8 @@ public class OrderTools {
                 ),
                 sessionId
         );
+        collectCards(toolContext, result.records());
+        return result;
     }
 
     @Tool(
@@ -101,8 +105,20 @@ public class OrderTools {
         if (orderId <= 0) {
             throw new IllegalArgumentException("订单编号必须大于0");
         }
-        return ticketingGateway.getMyOrderDetail(
+        var detail = ticketingGateway.getMyOrderDetail(
                 authenticatedUserId(toolContext), orderId, authenticatedSession(toolContext));
+        collectCards(toolContext, List.of(new OrderSummary(
+                detail.orderId(), detail.eventTitle(), detail.city(), detail.startTime(),
+                detail.status(), detail.totalAmount(), detail.venue(),
+                detail.ticketCategoryName(), detail.quantity())));
+        return detail;
+    }
+
+    private static void collectCards(ToolContext context, List<OrderSummary> orders) {
+        Object value = context.getContext().get(ChatReply.OrderCards.CONTEXT_KEY);
+        if (value instanceof ChatReply.OrderCards cards) {
+            cards.addAll(orders);
+        }
     }
 
     private static long authenticatedUserId(ToolContext toolContext) {

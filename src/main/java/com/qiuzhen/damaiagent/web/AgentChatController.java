@@ -1,7 +1,9 @@
 package com.qiuzhen.damaiagent.web;
 
+import com.qiuzhen.damaiagent.agent.ChatReply;
 import com.qiuzhen.damaiagent.agent.TicketingAgent;
 import com.qiuzhen.damaiagent.ticketing.HttpTicketingGateway;
+import com.qiuzhen.damaiagent.ticketing.OrderSummary;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.CookieValue;
@@ -11,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -54,19 +57,19 @@ public class AgentChatController {
         }
 
         long currentUserId = gateway.currentUserId(sessionId);
-        String reply = agent.chat(currentUserId,
+        ChatReply result = agent.chatWithCards(currentUserId,
                 request.conversationId(), request.message().strip(), sessionId);
-        if (reply == null || reply.isBlank()) {
+        if (result == null || result.reply() == null || result.reply().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
                     "智能助手未返回有效内容");
         }
         return new ApiResponse<>("SUCCESS", "操作成功",
-                new ChatResult(request.conversationId(), reply));
+                new ChatResult(request.conversationId(), result.reply(), result.orders()));
     }
 
     public record ChatRequest(String message, String conversationId) {}
 
-    public record ChatResult(String conversationId, String reply) {}
+    public record ChatResult(String conversationId, String reply, List<OrderSummary> orders) {}
 
     public record ApiResponse<T>(String code, String message, T data) {}
 }

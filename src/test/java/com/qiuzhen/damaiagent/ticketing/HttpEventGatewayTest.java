@@ -43,7 +43,7 @@ class HttpEventGatewayTest {
                 + "&categoryId=8&page=2&size=5";
         server.expect(requestTo(url))
                 .andExpect(method(HttpMethod.GET))
-                .andExpect(request -> assertFalse(request.getHeaders().containsKey(HttpHeaders.COOKIE)))
+                .andExpect(request -> assertNull(request.getHeaders().getFirst(HttpHeaders.COOKIE)))
                 .andRespond(withSuccess("""
                         {"code":"SUCCESS","data":{"records":[{
                           "id":21,"title":"春天音乐会","artist":"歌手A",
@@ -87,7 +87,7 @@ class HttpEventGatewayTest {
                         {"code":"SUCCESS","data":[{"id":8,"name":"演唱会"}]}
                         """, MediaType.APPLICATION_JSON));
         server.expect(requestTo("http://ticketing.test/public/ticket-categories?sessionId=33"))
-                .andExpect(request -> assertFalse(request.getHeaders().containsKey(HttpHeaders.COOKIE)))
+                .andExpect(request -> assertNull(request.getHeaders().getFirst(HttpHeaders.COOKIE)))
                 .andRespond(withSuccess("""
                         {"code":"SUCCESS","data":[{"id":66,"sessionId":33,"name":"看台",
                           "price":280.00,"availableStock":9}]}

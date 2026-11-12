@@ -71,6 +71,7 @@ class TicketingAgentMemoryTest {
                             case 3 -> new AssistantMessage(
                                     "已收到后续问题。"
                             );
+                            case 4 -> new AssistantMessage("你好。");
                             default -> throw new AssertionError(
                                     "发生了非预期的模型调用"
                             );
@@ -90,11 +91,15 @@ class TicketingAgentMemoryTest {
                 )
         );
 
-        agent.chat(
+        var firstReply = agent.chatWithCards(
                 1001L,
                 "tool-memory",
-                "查询上海待支付订单"
+                "查询上海待支付订单",
+                null
         );
+
+        assertEquals(List.of(102L, 101L), firstReply.orders().stream()
+                .map(OrderSummary::orderId).toList());
 
         // 第一次模型请求工具，第二次根据工具结果回答。
         assertEquals(2, modelRequests.size());
@@ -150,11 +155,15 @@ class TicketingAgentMemoryTest {
                 toolResult.responseData()
         );
 
-        agent.chat(
+        var followUpReply = agent.chatWithCards(
                 1001L,
                 "tool-memory",
-                "订单101的金额是多少？"
+                "订单101的金额是多少？",
+                null
         );
+
+        assertTrue(followUpReply.orders().isEmpty(),
+                "本轮没有新查询，不应把历史订单再次当作本轮查询结果返回");
 
         assertEquals(3, modelRequests.size());
 
@@ -165,5 +174,11 @@ class TicketingAgentMemoryTest {
                         ),
                 "下一轮模型请求应携带上一轮工具结果"
         );
+
+        var otherUserReply = agent.chatWithCards(1002L, "tool-memory", "你好", null);
+        assertTrue(otherUserReply.orders().isEmpty(), "卡片不能跨请求、跨用户共用");
+        assertTrue(modelRequests.getLast().getInstructions().stream()
+                .noneMatch(ToolResponseMessage.class::isInstance),
+                "相同会话标识下，不同用户的模型历史也必须隔离");
     }
 }

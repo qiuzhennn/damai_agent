@@ -1,6 +1,7 @@
 package com.qiuzhen.damaiagent.ticketing;
 
 import com.qiuzhen.damaiagent.agent.TicketingAgent;
+import com.qiuzhen.damaiagent.agent.ChatReply;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.chat.model.ToolContext;
 import org.springframework.ai.support.ToolCallbacks;
@@ -29,6 +30,7 @@ class OrderToolsTest {
         assertFalse(schema.contains(TicketingAgent.CURRENT_USER_ID));
         assertFalse(schema.contains(TicketingAgent.SESSION_ID));
         assertFalse(schema.contains("sessionId"));
+        assertFalse(schema.contains(ChatReply.OrderCards.CONTEXT_KEY));
     }
 
     @Test

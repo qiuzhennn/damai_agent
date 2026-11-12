@@ -1,6 +1,7 @@
 package com.qiuzhen.damaiagent.ticketing;
 
 import com.qiuzhen.damaiagent.agent.TicketingAgent;
+import com.qiuzhen.damaiagent.agent.ChatReply;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.chat.model.ToolContext;
 import org.springframework.ai.support.ToolCallbacks;
@@ -39,10 +40,15 @@ class OrderDetailToolsTest {
         assertFalse(schema.contains("ticketingSessionId"));
         assertFalse(schema.contains("sessionId"));
 
+        var cards = new ChatReply.OrderCards();
         String result = detailTool.call("{\"orderId\":23}", new ToolContext(Map.of(
                 TicketingAgent.CURRENT_USER_ID, 1001L,
-                TicketingAgent.SESSION_ID, "session-a")));
+                TicketingAgent.SESSION_ID, "session-a",
+                ChatReply.OrderCards.CONTEXT_KEY, cards)));
         assertTrue(result.contains("国家大剧院"));
         assertTrue(result.contains("内场A区"));
+        assertEquals(1, cards.snapshot().size());
+        assertEquals(23L, cards.snapshot().getFirst().orderId());
+        assertEquals("国家大剧院", cards.snapshot().getFirst().venue());
     }
 }
