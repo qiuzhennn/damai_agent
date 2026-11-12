@@ -14,6 +14,16 @@ public interface TicketingGateway {
             String sessionId
     );
 
+    /**
+     * 查询本人单笔订单详情。调用方必须传入已经认证的登录会话。
+     * 默认实现保留原有测试中 lambda 网关的兼容性。
+     */
+    default OrderDetail getMyOrderDetail(
+            long currentUserId, long orderId, String sessionId
+    ) {
+        throw new UnsupportedOperationException("当前网关未实现订单详情查询");
+    }
+
     record OrderPage(
             List<OrderSummary> records,
             long total,

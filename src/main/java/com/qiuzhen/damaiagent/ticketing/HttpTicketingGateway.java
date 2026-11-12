@@ -76,12 +76,42 @@ public class HttpTicketingGateway implements TicketingGateway {
                     }
                     return new OrderSummary(
                             order.id(), order.eventTitle(), order.city(),
-                            order.startTime(), order.status(), order.totalAmount()
+                            order.startTime(), order.status(), order.totalAmount(),
+                            order.venue(), order.ticketCategoryName(), order.quantity()
                     );
                 })
                 .toList();
 
         return new OrderPage(orders, page.total(), page.page(), page.size());
+    }
+
+    @Override
+    public OrderDetail getMyOrderDetail(
+            long currentUserId, long orderId, String sessionId
+    ) {
+        if (currentUserId <= 0 || orderId <= 0) {
+            throw new IllegalArgumentException("用户或订单编号无效");
+        }
+        DetailBody order = read(
+                client.get()
+                        .uri("/user/orders/{id}", orderId)
+                        .header(HttpHeaders.COOKIE, cookieHeader(sessionId)),
+                new ParameterizedTypeReference<ApiBody<DetailBody>>() {}
+        );
+        // 业务后端按会话鉴权；如果返回了userId，再做一次一致性检查。
+        if (order.userId() != null && order.userId() != currentUserId) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY, "订单身份与当前会话不一致");
+        }
+        if (order.id() != orderId) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY, "订单编号与查询请求不一致");
+        }
+        return new OrderDetail(
+                order.id(), order.eventTitle(), order.city(), order.venue(),
+                order.startTime(), order.ticketCategoryName(), order.quantity(),
+                order.unitPrice(), order.totalAmount(), order.status(),
+                order.createdAt(), order.expireTime(), order.paidAt(), order.updatedAt());
     }
 
     private static URI ordersUri(UriBuilder builder, OrderQuery query) {
@@ -114,6 +144,10 @@ public class HttpTicketingGateway implements TicketingGateway {
                     if (status == 401 || status == 403) {
                         throw new ResponseStatusException(
                                 response.getStatusCode(), "登录已失效或无访问权限");
+                    }
+                    if (status == 404) {
+                        throw new ResponseStatusException(
+                                HttpStatus.NOT_FOUND, "订单不存在或无访问权限");
                     }
                     throw new ResponseStatusException(
                             HttpStatus.BAD_GATEWAY, "票务服务暂时不可用");
@@ -166,7 +200,29 @@ public class HttpTicketingGateway implements TicketingGateway {
             String city,
             LocalDateTime startTime,
             int status,
-            BigDecimal totalAmount
+            BigDecimal totalAmount,
+            String venue,
+            String ticketCategoryName,
+            Integer quantity
+    ) {}
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private record DetailBody(
+            long id,
+            Long userId,
+            String eventTitle,
+            String city,
+            String venue,
+            LocalDateTime startTime,
+            String ticketCategoryName,
+            int quantity,
+            BigDecimal unitPrice,
+            BigDecimal totalAmount,
+            int status,
+            LocalDateTime createdAt,
+            LocalDateTime expireTime,
+            LocalDateTime paidAt,
+            LocalDateTime updatedAt
     ) {}
 }
 

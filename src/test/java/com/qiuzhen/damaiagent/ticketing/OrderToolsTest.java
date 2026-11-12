@@ -20,7 +20,9 @@ class OrderToolsTest {
     void shouldKeepIdentityAndSessionOutOfModelSchema() {
         TicketingGateway gateway = (userId, query, sessionId) ->
                 new TicketingGateway.OrderPage(List.of(), 0, query.page(), query.size());
-        var callback = ToolCallbacks.from(new OrderTools(gateway))[0];
+        var callback = java.util.Arrays.stream(ToolCallbacks.from(new OrderTools(gateway)))
+                .filter(item -> "searchMyOrders".equals(item.getToolDefinition().name()))
+                .findFirst().orElseThrow();
         String schema = callback.getToolDefinition().inputSchema();
 
         assertTrue(schema.contains("city"));
@@ -39,7 +41,9 @@ class OrderToolsTest {
             return new TicketingGateway.OrderPage(
                     List.of(), 0, query.page(), query.size());
         };
-        var callback = ToolCallbacks.from(new OrderTools(gateway))[0];
+        var callback = java.util.Arrays.stream(ToolCallbacks.from(new OrderTools(gateway)))
+                .filter(item -> "searchMyOrders".equals(item.getToolDefinition().name()))
+                .findFirst().orElseThrow();
 
         callback.call("""
                 {"city":"上海","status":0}
