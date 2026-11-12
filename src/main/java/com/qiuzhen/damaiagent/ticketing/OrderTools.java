@@ -7,6 +7,10 @@ import org.springframework.ai.tool.annotation.ToolParam;
 
 import java.util.Objects;
 
+/**
+ * 暴露给模型的订单查询工具。
+ * 模型提供筛选条件，应用通过 ToolContext 传递当前用户身份。
+ */
 public class OrderTools {
 
     private final TicketingGateway ticketingGateway;
@@ -21,7 +25,7 @@ public class OrderTools {
             description = """
                     查询当前登录用户的订单。
                     支持演出名称、城市、订单状态筛选和分页。
-                    用于订单查询和操作前的订单定位。
+                    用于订单查询，也用于操作引导时查找相关订单。
                     返回当前页订单及匹配总数。
                     用户没有提供的筛选条件应留空。
                     """
@@ -62,6 +66,7 @@ public class OrderTools {
 
             ToolContext toolContext
     ) {
+        // ToolContext 不进入模型的参数结构，模型无需也不能在参数中指定用户身份。
         Object value = toolContext.getContext().get(
                 TicketingAgent.CURRENT_USER_ID
         );
@@ -70,6 +75,11 @@ public class OrderTools {
             throw new IllegalStateException("缺少可信的用户身份");
         }
 
+        // 会话同样由应用注入，通过网关随 HTTP 请求传给票务后端。
+        Object session = toolContext.getContext().get(TicketingAgent.SESSION_ID);
+        String sessionId = session instanceof String text ? text : null;
+
+        // 默认页码和数量由程序处理，参数合法性由 OrderQuery 统一校验。
         return ticketingGateway.searchMyOrders(
                 userId,
                 new OrderQuery(
@@ -78,7 +88,8 @@ public class OrderTools {
                         status,
                         page == null ? 1 : page,
                         size == null ? 10 : size
-                )
+                ),
+                sessionId
         );
     }
 }

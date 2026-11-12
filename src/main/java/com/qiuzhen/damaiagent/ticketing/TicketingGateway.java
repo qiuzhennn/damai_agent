@@ -5,13 +5,13 @@ import java.util.List;
 public interface TicketingGateway {
 
     /**
-     * 查询当前用户的订单。
-     *
-     * currentUserId 由服务端认证上下文提供。
+     * 查询本人订单。
+     * 用户身份和登录会话由应用提供，不属于模型填写的工具参数。
      */
     OrderPage searchMyOrders(
             long currentUserId,
-            OrderQuery query
+            OrderQuery query,
+            String sessionId
     );
 
     record OrderPage(
@@ -29,3 +29,4 @@ public interface TicketingGateway {
         }
     }
 }
+

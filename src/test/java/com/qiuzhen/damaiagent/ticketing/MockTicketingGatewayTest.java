@@ -15,7 +15,8 @@ class MockTicketingGatewayTest {
     void shouldSearchOnlyCurrentUsersMatchingOrders() {
         var result = gateway.searchMyOrders(
                 1001L,
-                new OrderQuery(null, " 上海 ", 0, 1, 10)
+                new OrderQuery(null, " 上海 ", 0, 1, 10),
+                null
         );
 
         assertEquals(2L, result.total());
@@ -28,7 +29,8 @@ class MockTicketingGatewayTest {
 
         var otherUserResult = gateway.searchMyOrders(
                 1002L,
-                new OrderQuery(null, "上海", 0, 1, 10)
+                new OrderQuery(null, "上海", 0, 1, 10),
+                null
         );
 
         assertEquals(
@@ -43,12 +45,14 @@ class MockTicketingGatewayTest {
     void shouldPaginateAfterFiltering() {
         var firstPage = gateway.searchMyOrders(
                 1001L,
-                new OrderQuery(null, "上海", 0, 1, 1)
+                new OrderQuery(null, "上海", 0, 1, 1),
+                null
         );
 
         var secondPage = gateway.searchMyOrders(
                 1001L,
-                new OrderQuery(null, "上海", 0, 2, 1)
+                new OrderQuery(null, "上海", 0, 2, 1),
+                null
         );
 
         assertEquals(2L, firstPage.total());
@@ -64,7 +68,8 @@ class MockTicketingGatewayTest {
     void shouldReturnEmptyWhenNothingMatches() {
         var result = gateway.searchMyOrders(
                 1001L,
-                new OrderQuery("不存在的演出", null, null, 1, 10)
+                new OrderQuery("不存在的演出", null, null, 1, 10),
+                null
         );
 
         assertEquals(0L, result.total());
@@ -76,12 +81,14 @@ class MockTicketingGatewayTest {
     void shouldFindPaidAndCancelledOrders() {
         var paid = gateway.searchMyOrders(
                 1001L,
-                new OrderQuery(null, null, 1, 1, 10)
+                new OrderQuery(null, null, 1, 1, 10),
+                null
         );
 
         var cancelled = gateway.searchMyOrders(
                 1001L,
-                new OrderQuery(null, null, 2, 1, 10)
+                new OrderQuery(null, null, 2, 1, 10),
+                null
         );
 
         assertEquals(103L, paid.records().getFirst().orderId());

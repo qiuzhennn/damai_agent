@@ -24,7 +24,8 @@ class MockTicketingGateway implements TicketingGateway {
     @Override
     public OrderPage searchMyOrders(
             long currentUserId,
-            OrderQuery query
+            OrderQuery query,
+            String sessionId
     ) {
         if (currentUserId <= 0) {
             throw new IllegalArgumentException("用户ID必须大于0");
